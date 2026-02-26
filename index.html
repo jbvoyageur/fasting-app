@@ -2,277 +2,227 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jacques Fasting Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Jaco Fast Pro</title>
     <style>
         :root {
             --bg: #0f172a;
             --card: #1e293b;
-            --accent: #f97316; /* Orange vibrant */
+            --accent: #f97316;
+            --success: #22c55e;
             --text: #f8fafc;
             --text-muted: #94a3b8;
-            --success: #22c55e;
         }
 
         body {
             background-color: var(--bg);
             color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 20px;
             margin: 0;
             min-height: 100vh;
+            transition: background-color 1s ease;
         }
 
-        /* En-tête hebdomadaire */
-        .week-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
+        /* Barre de semaine dynamique */
+        .week-bar { display: flex; gap: 10px; margin-bottom: 25px; }
+        .day-circle { display: flex; flex-direction: column; align-items: center; font-size: 0.6rem; color: var(--text-muted); }
+        .dot { 
+            width: 32px; height: 32px; border-radius: 50%; 
+            background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); 
+            margin-bottom: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;
         }
-        .day-circle {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-        .dot {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.05);
-            border: 2px solid rgba(255,255,255,0.1);
-            margin-bottom: 6px;
-        }
-        .dot.active { border-color: var(--accent); background: rgba(249, 115, 22, 0.1); }
+        .dot.completed { border-color: var(--success); background: rgba(34, 197, 94, 0.2); }
 
-        /* Carte Principale */
         .container {
             background: var(--card);
             border-radius: 32px;
-            width: 100%;
-            max-width: 380px;
-            padding: 30px;
+            width: 100%; max-width: 380px;
+            padding: 25px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.3);
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.05);
         }
 
-        .timer-box {
-            position: relative;
-            width: 260px;
-            height: 260px;
-            margin: 0 auto 30px;
-        }
-
+        .timer-box { position: relative; width: 240px; height: 240px; margin: 0 auto 20px; }
         svg { transform: rotate(-90deg); }
-        .bg-ring { stroke: rgba(255,255,255,0.05); }
         .progress-ring {
             stroke: var(--accent);
-            stroke-dasharray: 754;
-            stroke-dashoffset: 754;
-            transition: stroke-dashoffset 0.5s ease;
+            stroke-dasharray: 754; stroke-dashoffset: 754;
+            transition: stroke-dashoffset 0.5s ease, stroke 0.5s ease;
         }
 
-        .timer-content {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100%;
+        #timer-display { font-size: 3.2rem; font-weight: 800; margin: 5px 0; }
+        .status-label { color: var(--accent); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .stat-card { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 15px; }
+        .stat-label { font-size: 0.6rem; color: var(--text-muted); font-weight: 700; }
+
+        /* Historique */
+        .history { width: 100%; max-width: 380px; margin-top: 25px; text-align: left; }
+        .history-title { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; padding-left: 10px; }
+        .history-item { 
+            background: rgba(255,255,255,0.03); padding: 12px 15px; border-radius: 15px; 
+            display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;
         }
 
-        #timer-display { font-size: 3.5rem; font-weight: 800; letter-spacing: -1px; }
-        .status-label { color: var(--accent); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; margin-top: 5px; }
-
-        /* Stats */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        .stat-card {
-            background: rgba(255,255,255,0.03);
-            padding: 15px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .stat-label { font-size: 0.65rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
-        .stat-value { font-size: 1rem; font-weight: 700; }
-
-        /* Contrôles */
         select {
-            width: 100%;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: white;
-            padding: 12px;
-            border-radius: 12px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            appearance: none;
-            text-align: center;
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: white; padding: 12px; border-radius: 12px; margin-bottom: 15px; text-align: center;
         }
 
         button {
-            width: 100%;
-            padding: 20px;
-            border-radius: 20px;
-            border: none;
-            font-size: 1.1rem;
-            font-weight: 800;
-            cursor: pointer;
-            transition: all 0.2s;
+            width: 100%; padding: 18px; border-radius: 20px; border: none;
+            font-size: 1.1rem; font-weight: 800; cursor: pointer; transition: 0.2s;
         }
         .btn-start { background: var(--accent); color: white; }
         .btn-stop { background: #334155; color: #ef4444; }
-        button:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
-    <div class="week-bar">
-        <div class="day-circle"><div class="dot active"></div>LUN</div>
-        <div class="day-circle"><div class="dot"></div>MAR</div>
-        <div class="day-circle"><div class="dot"></div>MER</div>
-        <div class="day-circle"><div class="dot"></div>JEU</div>
-        <div class="day-circle"><div class="dot"></div>VEN</div>
-        <div class="day-circle"><div class="dot"></div>SAM</div>
-        <div class="day-circle"><div class="dot"></div>DIM</div>
-    </div>
+    <div class="week-bar" id="week-bar">
+        </div>
 
     <div class="container">
         <div class="timer-box">
-            <svg width="260" height="260">
-                <circle class="bg-ring" stroke-width="16" fill="transparent" r="120" cx="130" cy="130"/>
-                <circle id="progress-bar" class="progress-ring" stroke-width="16" stroke-linecap="round" fill="transparent" r="120" cx="130" cy="130"/>
+            <svg width="240" height="240">
+                <circle stroke="rgba(255,255,255,0.05)" stroke-width="14" fill="transparent" r="120" cx="120" cy="120"/>
+                <circle id="progress-bar" class="progress-ring" stroke-width="14" stroke-linecap="round" fill="transparent" r="120" cx="120" cy="120"/>
             </svg>
-            <div class="timer-content">
-                <div style="font-size: 2rem;">🔥</div>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
                 <div id="timer-display">00:00:00</div>
-                <div id="status-text" class="status-label">PRÊT À JEÛNER</div>
+                <div id="status-text" class="status-label">PRÊT</div>
             </div>
         </div>
 
         <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">DÉBUT</div>
-                <div id="start-time" class="stat-value">--:--</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">OBJECTIF</div>
-                <div id="end-time" class="stat-value">--:--</div>
-            </div>
+            <div class="stat-card"><div class="stat-label">DÉBUT</div><div id="start-time" style="font-weight:700">--:--</div></div>
+            <div class="stat-card"><div class="stat-label">OBJECTIF</div><div id="end-time" style="font-weight:700">--:--</div></div>
         </div>
 
         <select id="goal-select">
-            <option value="13">13 Heures (Circadien)</option>
-            <option value="16" selected>16 Heures (16:8)</option>
-            <option value="18">18 Heures (18:6)</option>
-            <option value="20">20 Heures (Warrior)</option>
+            <option value="13">13 Heures</option>
+            <option value="16" selected>16 Heures</option>
+            <option value="18">18 Heures</option>
+            <option value="20">20 Heures</option>
         </select>
 
         <button id="main-btn" class="btn-start">Démarrer le jeûne</button>
+    </div>
+
+    <div class="history">
+        <div class="history-title">HISTORIQUE RÉCENT</div>
+        <div id="history-list"></div>
     </div>
 
     <script>
         let startTime = null;
         let timerInterval = null;
         const circ = 120 * 2 * Math.PI;
-
         const btn = document.getElementById('main-btn');
-        const display = document.getElementById('timer-display');
-        const startText = document.getElementById('start-time');
-        const endText = document.getElementById('end-time');
-        const statusText = document.getElementById('status-text');
-        const progressBar = document.getElementById('progress-bar');
-        const goalSelect = document.getElementById('goal-select');
+        const historyList = document.getElementById('history-list');
+
+        // Initialisation de la semaine
+        const days = ['DIM','LUN','MAR','MER','JEU','VEN','SAM'];
+        function initWeekBar() {
+            const bar = document.getElementById('week-bar');
+            bar.innerHTML = '';
+            const history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
+            const today = new Date().getDay();
+
+            days.forEach((day, index) => {
+                const hasCompleted = history.some(h => new Date(h.date).getDay() === index);
+                bar.innerHTML += `
+                    <div class="day-circle">
+                        <div class="dot ${hasCompleted ? 'completed' : ''}">${hasCompleted ? '✔️' : ''}</div>
+                        ${day}
+                    </div>`;
+            });
+        }
 
         function updateUI() {
             if (!startTime) return;
-
             const now = new Date();
             const elapsed = Math.floor((now - startTime) / 1000);
-            const goalHours = parseInt(goalSelect.value);
-            const goalSeconds = goalHours * 3600;
+            const goalSeconds = parseInt(document.getElementById('goal-select').value) * 3600;
 
-            // Timer
             const h = Math.floor(elapsed / 3600).toString().padStart(2, '0');
             const m = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
             const s = (elapsed % 60).toString().padStart(2, '0');
-            display.textContent = `${h}:${m}:${s}`;
+            document.getElementById('timer-display').textContent = `${h}:${m}:${s}`;
 
-            // Cercle et status
             const progress = Math.min(elapsed / goalSeconds, 1);
-            progressBar.style.strokeDashoffset = circ - (progress * circ);
-            
+            document.getElementById('progress-bar').style.strokeDashoffset = circ - (progress * circ);
+
             if (elapsed >= goalSeconds) {
-                statusText.textContent = "OBJECTIF ATTEINT !";
-                statusText.style.color = "#22c55e";
-                progressBar.style.stroke = "#22c55e";
+                document.body.style.backgroundColor = "#064e3b"; // Vert sombre
+                document.getElementById('status-text').textContent = "OBJECTIF ATTEINT !";
+                document.getElementById('progress-bar').style.stroke = "var(--success)";
             } else {
-                statusText.textContent = "JEÛNE EN COURS";
-                statusText.style.color = "var(--accent)";
-                progressBar.style.stroke = "var(--accent)";
+                document.body.style.backgroundColor = "var(--bg)";
+                document.getElementById('status-text').textContent = "EN COURS";
             }
-
-            // Heure de début et fin
-            startText.textContent = startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const goalDate = new Date(startTime.getTime() + (goalSeconds * 1000));
-            endText.textContent = goalDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         }
 
-        function startFasting() {
-            startTime = new Date();
-            localStorage.setItem('fastStartTime', startTime.getTime());
-            toggleButtonUI(true);
-            timerInterval = setInterval(updateUI, 1000);
-            updateUI();
+        function saveToHistory() {
+            const now = new Date();
+            const elapsed = Math.floor((now - startTime) / 1000);
+            const hours = (elapsed / 3600).toFixed(1);
+            let history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
+            history.unshift({ date: startTime.toISOString(), duration: hours });
+            localStorage.setItem('fastHistory', JSON.stringify(history.slice(0, 5)));
+            renderHistory();
+            initWeekBar();
         }
 
-        function stopFasting() {
-            clearInterval(timerInterval);
-            localStorage.removeItem('fastStartTime');
-            startTime = null;
-            toggleButtonUI(false);
-            display.textContent = "00:00:00";
-            startText.textContent = "--:--";
-            endText.textContent = "--:--";
-            statusText.textContent = "PRÊT À JEÛNER";
-            progressBar.style.strokeDashoffset = circ;
-        }
-
-        function toggleButtonUI(isFasting) {
-            if (isFasting) {
-                btn.textContent = "Arrêter le jeûne";
-                btn.className = "btn-stop";
-            } else {
-                btn.textContent = "Démarrer le jeûne";
-                btn.className = "btn-start";
-            }
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
+            historyList.innerHTML = history.map(h => `
+                <div class="history-item">
+                    <span>${new Date(h.date).toLocaleDateString('fr-CA', {weekday: 'short', day: 'numeric'})}</span>
+                    <span style="font-weight:800; color:var(--success)">${h.duration}h complétées</span>
+                </div>
+            `).join('');
         }
 
         btn.addEventListener('click', () => {
-            if (!startTime) startFasting();
-            else stopFasting();
+            if (!startTime) {
+                startTime = new Date();
+                localStorage.setItem('fastStartTime', startTime.getTime());
+                btn.textContent = "Arrêter le jeûne";
+                btn.className = "btn-stop";
+                timerInterval = setInterval(updateUI, 1000);
+                updateUI();
+                // Afficher heures début/fin
+                document.getElementById('start-time').textContent = startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const goalDate = new Date(startTime.getTime() + (parseInt(document.getElementById('goal-select').value) * 3600000));
+                document.getElementById('end-time').textContent = goalDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            } else {
+                saveToHistory();
+                clearInterval(timerInterval);
+                localStorage.removeItem('fastStartTime');
+                startTime = null;
+                location.reload();
+            }
         });
 
-        goalSelect.addEventListener('change', () => {
-            if (startTime) updateUI();
-        });
-
-        // Au chargement : vérifier si un jeûne était en cours
-        const savedTime = localStorage.getItem('fastStartTime');
-        if (savedTime) {
-            startTime = new Date(parseInt(savedTime));
-            toggleButtonUI(true);
+        // Charger l'état
+        const saved = localStorage.getItem('fastStartTime');
+        if (saved) {
+            startTime = new Date(parseInt(saved));
+            btn.textContent = "Arrêter le jeûne";
+            btn.className = "btn-stop";
             timerInterval = setInterval(updateUI, 1000);
             updateUI();
         }
+        renderHistory();
+        initWeekBar();
     </script>
 </body>
 </html>
