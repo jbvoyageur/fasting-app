@@ -12,6 +12,7 @@
             --card: #1e293b;
             --accent: #f97316;
             --success: #22c55e;
+            --water: #38bdf8;
             --text: #f8fafc;
             --text-muted: #94a3b8;
         }
@@ -29,7 +30,7 @@
             transition: background-color 1s ease;
         }
 
-        .week-bar { display: flex; gap: 10px; margin-bottom: 25px; }
+        .week-bar { display: flex; gap: 8px; margin-bottom: 20px; }
         .day-circle { display: flex; flex-direction: column; align-items: center; font-size: 0.6rem; color: var(--text-muted); }
         .dot { 
             width: 32px; height: 32px; border-radius: 50%; 
@@ -47,8 +48,7 @@
             text-align: center;
         }
 
-        /* Correction du conteneur pour éviter le tronquage */
-        .timer-box { position: relative; width: 280px; height: 280px; margin: 0 auto 20px; }
+        .timer-box { position: relative; width: 300px; height: 300px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;}
         
         svg { transform: rotate(-90deg); overflow: visible; }
         .progress-ring {
@@ -57,15 +57,16 @@
             transition: stroke-dashoffset 0.5s ease, stroke 0.5s ease;
         }
 
-        /* Animation du Cycliste */
+        /* Animation du Cycliste (Orbite élargie et Sens Horaire) */
         .cyclist {
             position: absolute;
-            font-size: 1.5rem;
-            width: 30px;
-            height: 30px;
-            display: none; /* Apparaît seulement pendant le jeûne */
-            offset-path: path('M 140,140 m -120,0 a 120,120 0 1,0 240,0 a 120,120 0 1,0 -240,0');
+            font-size: 1.6rem;
+            width: 35px; height: 35px;
+            display: none;
+            /* Orbite à 135px pour ne pas toucher le cercle à 120px */
+            offset-path: path('M 150,150 m 0,-135 a 135,135 0 1,1 0,270 a 135,135 0 1,1 0,-270');
             animation: bike-ride 10s linear infinite;
+            z-index: 10;
         }
 
         @keyframes bike-ride {
@@ -73,32 +74,33 @@
             to { offset-distance: 100%; }
         }
 
-        #timer-display { font-size: 3.2rem; font-weight: 800; margin: 5px 0; }
-        .status-label { color: var(--accent); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; }
-        .phase-label { font-size: 0.7rem; color: var(--text-muted); margin-top: 5px; font-style: italic; }
+        #timer-display { font-size: 2.8rem; font-weight: 800; margin: 2px 0; letter-spacing: -1px; }
+        .status-label { color: var(--accent); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; }
 
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .water-tracker {
+            display: flex; justify-content: center; align-items: center;
+            gap: 15px; margin: 15px 0; padding: 10px;
+            background: rgba(56, 189, 248, 0.1); border-radius: 20px;
+        }
+        .water-btn { 
+            background: var(--water); color: white; border: none; 
+            width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer;
+        }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 0; }
         .stat-card { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 15px; }
-        .stat-label { font-size: 0.6rem; color: var(--text-muted); font-weight: 700; }
-
-        .history { width: 100%; max-width: 380px; margin-top: 25px; text-align: left; }
-        .history-title { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; padding-left: 10px; }
-        .history-item { 
-            background: rgba(255,255,255,0.03); padding: 12px 15px; border-radius: 15px; 
-            display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;
-        }
-
-        select {
-            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-            color: white; padding: 12px; border-radius: 12px; margin-bottom: 15px; text-align: center;
-        }
-
-        button {
+        
+        button#main-btn {
             width: 100%; padding: 18px; border-radius: 20px; border: none;
-            font-size: 1.1rem; font-weight: 800; cursor: pointer; transition: 0.2s;
+            font-size: 1.1rem; font-weight: 800; cursor: pointer;
         }
         .btn-start { background: var(--accent); color: white; }
         .btn-stop { background: #334155; color: #ef4444; }
+
+        select {
+            width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); 
+            padding: 10px; border-radius: 12px; margin-bottom: 15px; text-align: center; font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -108,20 +110,26 @@
     <div class="container">
         <div class="timer-box">
             <div id="cyclist" class="cyclist">🚴‍♂️</div>
-            <svg width="280" height="280">
+            <svg width="280" height="280" viewBox="0 0 280 280">
                 <circle stroke="rgba(255,255,255,0.05)" stroke-width="14" fill="transparent" r="120" cx="140" cy="140"/>
                 <circle id="progress-bar" class="progress-ring" stroke-width="14" stroke-linecap="round" fill="transparent" r="120" cx="140" cy="140"/>
             </svg>
             <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
                 <div id="timer-display">00:00:00</div>
                 <div id="status-text" class="status-label">PRÊT</div>
-                <div id="phase-text" class="phase-label">Repos digestif</div>
+                <div id="phase-text" style="font-size:0.65rem; color:var(--text-muted); margin-top:3px;">Repos digestif</div>
             </div>
         </div>
 
+        <div class="water-tracker">
+            <span style="font-size: 1.1rem;">💧</span>
+            <span id="water-count" style="font-weight: 800; color: var(--water);">0</span> <span style="font-size:0.8rem">verres</span>
+            <button class="water-btn" onclick="addWater()">+</button>
+        </div>
+
         <div class="stats-grid">
-            <div class="stat-card"><div class="stat-label">DÉBUT</div><div id="start-time" style="font-weight:700">--:--</div></div>
-            <div class="stat-card"><div class="stat-label">OBJECTIF</div><div id="end-time" style="font-weight:700">--:--</div></div>
+            <div class="stat-card"><div style="font-size:0.6rem; color:var(--text-muted);">DÉBUT</div><div id="start-time" style="font-weight:700">--:--</div></div>
+            <div class="stat-card"><div style="font-size:0.6rem; color:var(--text-muted);">OBJECTIF</div><div id="end-time" style="font-weight:700">--:--</div></div>
         </div>
 
         <select id="goal-select">
@@ -134,17 +142,19 @@
         <button id="main-btn" class="btn-start">Démarrer le jeûne</button>
     </div>
 
-    <div class="history">
-        <div class="history-title">HISTORIQUE RÉCENT</div>
-        <div id="history-list"></div>
-    </div>
-
     <script>
         let startTime = null;
         let timerInterval = null;
         const circ = 120 * 2 * Math.PI;
         const btn = document.getElementById('main-btn');
         const cyclist = document.getElementById('cyclist');
+
+        function addWater() {
+            let count = parseInt(localStorage.getItem('waterCount') || '0');
+            count++;
+            localStorage.setItem('waterCount', count);
+            document.getElementById('water-count').textContent = count;
+        }
 
         function updateUI() {
             if (!startTime) return;
@@ -160,17 +170,17 @@
             const progress = Math.min(elapsed / goalSeconds, 1);
             document.getElementById('progress-bar').style.strokeDashoffset = circ - (progress * circ);
 
-            // Gestion des phases métaboliques
             const phase = document.getElementById('phase-text');
-            if (elapsed < 3600 * 4) phase.textContent = "Baisse du sucre sanguin";
-            else if (elapsed < 3600 * 12) phase.textContent = "Brûlage des graisses débuté";
-            else if (elapsed < 3600 * 16) phase.textContent = "Autophagie en approche 🔥";
+            if (elapsed < 3600 * 4) phase.textContent = "Baisse du sucre";
+            else if (elapsed < 3600 * 12) phase.textContent = "Brûlage des graisses";
+            else if (elapsed < 3600 * 16) phase.textContent = "Autophagie en cours 🔥";
             else phase.textContent = "Mode Survie Activé 🦾";
 
             if (elapsed >= goalSeconds) {
                 document.body.style.backgroundColor = "#064e3b";
                 document.getElementById('status-text').textContent = "OBJECTIF ATTEINT !";
                 document.getElementById('progress-bar').style.stroke = "var(--success)";
+                cyclist.style.animationDuration = '4s';
             }
         }
 
@@ -178,14 +188,8 @@
             if (!startTime) {
                 startTime = new Date();
                 localStorage.setItem('fastStartTime', startTime.getTime());
-                cyclist.style.display = 'block';
-                btn.textContent = "Arrêter le jeûne";
-                btn.className = "btn-stop";
-                timerInterval = setInterval(updateUI, 1000);
-                updateUI();
-                document.getElementById('start-time').textContent = startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                const goalDate = new Date(startTime.getTime() + (parseInt(document.getElementById('goal-select').value) * 3600000));
-                document.getElementById('end-time').textContent = goalDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                localStorage.setItem('waterCount', '0');
+                location.reload();
             } else {
                 saveToHistory();
                 localStorage.removeItem('fastStartTime');
@@ -197,17 +201,7 @@
             const elapsed = Math.floor((new Date() - startTime) / 1000);
             let history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
             history.unshift({ date: startTime.toISOString(), duration: (elapsed / 3600).toFixed(1) });
-            localStorage.setItem('fastHistory', JSON.stringify(history.slice(0, 5)));
-        }
-
-        function renderHistory() {
-            const history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
-            document.getElementById('history-list').innerHTML = history.map(h => `
-                <div class="history-item">
-                    <span>${new Date(h.date).toLocaleDateString('fr-CA', {weekday: 'short', day: 'numeric'})}</span>
-                    <span style="font-weight:800; color:var(--success)">${h.duration}h</span>
-                </div>
-            `).join('');
+            localStorage.setItem('fastHistory', JSON.stringify(history.slice(0, 7)));
         }
 
         const saved = localStorage.getItem('fastStartTime');
@@ -216,14 +210,17 @@
             cyclist.style.display = 'block';
             btn.textContent = "Arrêter le jeûne";
             btn.className = "btn-stop";
+            document.getElementById('start-time').textContent = startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const goalDate = new Date(startTime.getTime() + (parseInt(document.getElementById('goal-select').value) * 3600000));
+            document.getElementById('end-time').textContent = goalDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             timerInterval = setInterval(updateUI, 1000);
             updateUI();
         }
-        renderHistory();
-        
-        // Init de la barre de semaine (version simplifiée)
+
+        document.getElementById('water-count').textContent = localStorage.getItem('waterCount') || '0';
+
         const bar = document.getElementById('week-bar');
-        ['DIM','LUN','MAR','MER','JEU','VEN','SAM'].forEach((d, i) => {
+        ['D','L','M','M','J','V','S'].forEach((d, i) => {
             const done = JSON.parse(localStorage.getItem('fastHistory') || '[]').some(h => new Date(h.date).getDay() === i);
             bar.innerHTML += `<div class="day-circle"><div class="dot ${done ? 'completed' : ''}">${done ? '✔️' : ''}</div>${d}</div>`;
         });
