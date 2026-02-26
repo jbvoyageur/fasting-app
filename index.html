@@ -29,7 +29,6 @@
             transition: background-color 1s ease;
         }
 
-        /* Barre de semaine dynamique */
         .week-bar { display: flex; gap: 10px; margin-bottom: 25px; }
         .day-circle { display: flex; flex-direction: column; align-items: center; font-size: 0.6rem; color: var(--text-muted); }
         .dot { 
@@ -48,22 +47,40 @@
             text-align: center;
         }
 
-        .timer-box { position: relative; width: 240px; height: 240px; margin: 0 auto 20px; }
-        svg { transform: rotate(-90deg); }
+        /* Correction du conteneur pour éviter le tronquage */
+        .timer-box { position: relative; width: 280px; height: 280px; margin: 0 auto 20px; }
+        
+        svg { transform: rotate(-90deg); overflow: visible; }
         .progress-ring {
             stroke: var(--accent);
             stroke-dasharray: 754; stroke-dashoffset: 754;
             transition: stroke-dashoffset 0.5s ease, stroke 0.5s ease;
         }
 
+        /* Animation du Cycliste */
+        .cyclist {
+            position: absolute;
+            font-size: 1.5rem;
+            width: 30px;
+            height: 30px;
+            display: none; /* Apparaît seulement pendant le jeûne */
+            offset-path: path('M 140,140 m -120,0 a 120,120 0 1,0 240,0 a 120,120 0 1,0 -240,0');
+            animation: bike-ride 10s linear infinite;
+        }
+
+        @keyframes bike-ride {
+            from { offset-distance: 0%; }
+            to { offset-distance: 100%; }
+        }
+
         #timer-display { font-size: 3.2rem; font-weight: 800; margin: 5px 0; }
         .status-label { color: var(--accent); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; }
+        .phase-label { font-size: 0.7rem; color: var(--text-muted); margin-top: 5px; font-style: italic; }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
         .stat-card { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 15px; }
         .stat-label { font-size: 0.6rem; color: var(--text-muted); font-weight: 700; }
 
-        /* Historique */
         .history { width: 100%; max-width: 380px; margin-top: 25px; text-align: left; }
         .history-title { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; padding-left: 10px; }
         .history-item { 
@@ -86,18 +103,19 @@
 </head>
 <body>
 
-    <div class="week-bar" id="week-bar">
-        </div>
+    <div class="week-bar" id="week-bar"></div>
 
     <div class="container">
         <div class="timer-box">
-            <svg width="240" height="240">
-                <circle stroke="rgba(255,255,255,0.05)" stroke-width="14" fill="transparent" r="120" cx="120" cy="120"/>
-                <circle id="progress-bar" class="progress-ring" stroke-width="14" stroke-linecap="round" fill="transparent" r="120" cx="120" cy="120"/>
+            <div id="cyclist" class="cyclist">🚴‍♂️</div>
+            <svg width="280" height="280">
+                <circle stroke="rgba(255,255,255,0.05)" stroke-width="14" fill="transparent" r="120" cx="140" cy="140"/>
+                <circle id="progress-bar" class="progress-ring" stroke-width="14" stroke-linecap="round" fill="transparent" r="120" cx="140" cy="140"/>
             </svg>
             <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
                 <div id="timer-display">00:00:00</div>
                 <div id="status-text" class="status-label">PRÊT</div>
+                <div id="phase-text" class="phase-label">Repos digestif</div>
             </div>
         </div>
 
@@ -126,25 +144,7 @@
         let timerInterval = null;
         const circ = 120 * 2 * Math.PI;
         const btn = document.getElementById('main-btn');
-        const historyList = document.getElementById('history-list');
-
-        // Initialisation de la semaine
-        const days = ['DIM','LUN','MAR','MER','JEU','VEN','SAM'];
-        function initWeekBar() {
-            const bar = document.getElementById('week-bar');
-            bar.innerHTML = '';
-            const history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
-            const today = new Date().getDay();
-
-            days.forEach((day, index) => {
-                const hasCompleted = history.some(h => new Date(h.date).getDay() === index);
-                bar.innerHTML += `
-                    <div class="day-circle">
-                        <div class="dot ${hasCompleted ? 'completed' : ''}">${hasCompleted ? '✔️' : ''}</div>
-                        ${day}
-                    </div>`;
-            });
-        }
+        const cyclist = document.getElementById('cyclist');
 
         function updateUI() {
             if (!startTime) return;
@@ -160,69 +160,73 @@
             const progress = Math.min(elapsed / goalSeconds, 1);
             document.getElementById('progress-bar').style.strokeDashoffset = circ - (progress * circ);
 
+            // Gestion des phases métaboliques
+            const phase = document.getElementById('phase-text');
+            if (elapsed < 3600 * 4) phase.textContent = "Baisse du sucre sanguin";
+            else if (elapsed < 3600 * 12) phase.textContent = "Brûlage des graisses débuté";
+            else if (elapsed < 3600 * 16) phase.textContent = "Autophagie en approche 🔥";
+            else phase.textContent = "Mode Survie Activé 🦾";
+
             if (elapsed >= goalSeconds) {
-                document.body.style.backgroundColor = "#064e3b"; // Vert sombre
+                document.body.style.backgroundColor = "#064e3b";
                 document.getElementById('status-text').textContent = "OBJECTIF ATTEINT !";
                 document.getElementById('progress-bar').style.stroke = "var(--success)";
-            } else {
-                document.body.style.backgroundColor = "var(--bg)";
-                document.getElementById('status-text').textContent = "EN COURS";
             }
-        }
-
-        function saveToHistory() {
-            const now = new Date();
-            const elapsed = Math.floor((now - startTime) / 1000);
-            const hours = (elapsed / 3600).toFixed(1);
-            let history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
-            history.unshift({ date: startTime.toISOString(), duration: hours });
-            localStorage.setItem('fastHistory', JSON.stringify(history.slice(0, 5)));
-            renderHistory();
-            initWeekBar();
-        }
-
-        function renderHistory() {
-            const history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
-            historyList.innerHTML = history.map(h => `
-                <div class="history-item">
-                    <span>${new Date(h.date).toLocaleDateString('fr-CA', {weekday: 'short', day: 'numeric'})}</span>
-                    <span style="font-weight:800; color:var(--success)">${h.duration}h complétées</span>
-                </div>
-            `).join('');
         }
 
         btn.addEventListener('click', () => {
             if (!startTime) {
                 startTime = new Date();
                 localStorage.setItem('fastStartTime', startTime.getTime());
+                cyclist.style.display = 'block';
                 btn.textContent = "Arrêter le jeûne";
                 btn.className = "btn-stop";
                 timerInterval = setInterval(updateUI, 1000);
                 updateUI();
-                // Afficher heures début/fin
                 document.getElementById('start-time').textContent = startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 const goalDate = new Date(startTime.getTime() + (parseInt(document.getElementById('goal-select').value) * 3600000));
                 document.getElementById('end-time').textContent = goalDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             } else {
                 saveToHistory();
-                clearInterval(timerInterval);
                 localStorage.removeItem('fastStartTime');
-                startTime = null;
                 location.reload();
             }
         });
 
-        // Charger l'état
+        function saveToHistory() {
+            const elapsed = Math.floor((new Date() - startTime) / 1000);
+            let history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
+            history.unshift({ date: startTime.toISOString(), duration: (elapsed / 3600).toFixed(1) });
+            localStorage.setItem('fastHistory', JSON.stringify(history.slice(0, 5)));
+        }
+
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
+            document.getElementById('history-list').innerHTML = history.map(h => `
+                <div class="history-item">
+                    <span>${new Date(h.date).toLocaleDateString('fr-CA', {weekday: 'short', day: 'numeric'})}</span>
+                    <span style="font-weight:800; color:var(--success)">${h.duration}h</span>
+                </div>
+            `).join('');
+        }
+
         const saved = localStorage.getItem('fastStartTime');
         if (saved) {
             startTime = new Date(parseInt(saved));
+            cyclist.style.display = 'block';
             btn.textContent = "Arrêter le jeûne";
             btn.className = "btn-stop";
             timerInterval = setInterval(updateUI, 1000);
             updateUI();
         }
         renderHistory();
-        initWeekBar();
+        
+        // Init de la barre de semaine (version simplifiée)
+        const bar = document.getElementById('week-bar');
+        ['DIM','LUN','MAR','MER','JEU','VEN','SAM'].forEach((d, i) => {
+            const done = JSON.parse(localStorage.getItem('fastHistory') || '[]').some(h => new Date(h.date).getDay() === i);
+            bar.innerHTML += `<div class="day-circle"><div class="dot ${done ? 'completed' : ''}">${done ? '✔️' : ''}</div>${d}</div>`;
+        });
     </script>
 </body>
 </html>
