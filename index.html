@@ -44,29 +44,40 @@
             border-radius: 32px;
             width: 100%; max-width: 380px;
             padding: 25px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
             text-align: center;
         }
 
-        .timer-box { position: relative; width: 300px; height: 300px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;}
+        /* Conteneur stabilisé à 320x320 */
+        .timer-box { 
+            position: relative; 
+            width: 320px; height: 320px; 
+            margin: 0 auto 10px;
+        }
         
-        svg { transform: rotate(-90deg); overflow: visible; }
+        svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
         .progress-ring {
             stroke: var(--accent);
-            stroke-dasharray: 754; stroke-dashoffset: 754;
-            transition: stroke-dashoffset 0.5s ease, stroke 0.5s ease;
+            stroke-dasharray: 754; /* 2 * PI * 120 */
+            stroke-dashoffset: 754;
+            transition: stroke-dashoffset 0.5s ease;
         }
 
-        /* Animation du Cycliste (Orbite élargie et Sens Horaire) */
+        /* LE CYCLISTE RECALIBRÉ */
         .cyclist {
             position: absolute;
-            font-size: 1.6rem;
-            width: 35px; height: 35px;
+            top: 0; left: 0;
+            width: 320px; height: 320px; /* Même taille que le box */
             display: none;
-            /* Orbite à 135px pour ne pas toucher le cercle à 120px */
-            offset-path: path('M 150,150 m 0,-135 a 135,135 0 1,1 0,270 a 135,135 0 1,1 0,-270');
+            /* Orbite à r=95 pour être à l'intérieur du cercle de r=120 */
+            offset-path: path('M 160,160 m 0,-95 a 95,95 0 1,1 0,190 a 95,95 0 1,1 0,-190');
+            offset-rotate: auto 180deg; /* Garde les roues vers le cercle */
             animation: bike-ride 10s linear infinite;
-            z-index: 10;
+            z-index: 20;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         @keyframes bike-ride {
@@ -74,7 +85,16 @@
             to { offset-distance: 100%; }
         }
 
-        #timer-display { font-size: 2.8rem; font-weight: 800; margin: 2px 0; letter-spacing: -1px; }
+        .timer-content {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px; /* Plus étroit pour laisser passer le vélo */
+            pointer-events: none;
+        }
+
+        #timer-display { font-size: 2.2rem; font-weight: 800; margin: 0; letter-spacing: -1px; }
+        #progress-percent { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
         .status-label { color: var(--accent); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; }
 
         .water-tracker {
@@ -82,10 +102,7 @@
             gap: 15px; margin: 15px 0; padding: 10px;
             background: rgba(56, 189, 248, 0.1); border-radius: 20px;
         }
-        .water-btn { 
-            background: var(--water); color: white; border: none; 
-            width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer;
-        }
+        .water-btn { background: var(--water); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; font-weight: bold; cursor: pointer; }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 0; }
         .stat-card { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 15px; }
@@ -99,7 +116,7 @@
 
         select {
             width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); 
-            padding: 10px; border-radius: 12px; margin-bottom: 15px; text-align: center; font-weight: 600;
+            padding: 12px; border-radius: 12px; margin-bottom: 15px; text-align: center; font-weight: 600;
         }
     </style>
 </head>
@@ -109,21 +126,21 @@
 
     <div class="container">
         <div class="timer-box">
-            <div id="cyclist" class="cyclist">🚴‍♂️</div>
-            <svg width="280" height="280" viewBox="0 0 280 280">
-                <circle stroke="rgba(255,255,255,0.05)" stroke-width="14" fill="transparent" r="120" cx="140" cy="140"/>
-                <circle id="progress-bar" class="progress-ring" stroke-width="14" stroke-linecap="round" fill="transparent" r="120" cx="140" cy="140"/>
+            <svg width="320" height="320">
+                <circle stroke="rgba(255,255,255,0.05)" stroke-width="16" fill="transparent" r="120" cx="160" cy="160"/>
+                <circle id="progress-bar" class="progress-ring" stroke-width="12" stroke-linecap="round" fill="transparent" r="120" cx="160" cy="160"/>
             </svg>
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
+            <div id="cyclist" class="cyclist" style="display:none;">🚴‍♂️</div>
+            <div class="timer-content">
+                <div id="progress-percent">0%</div>
                 <div id="timer-display">00:00:00</div>
                 <div id="status-text" class="status-label">PRÊT</div>
-                <div id="phase-text" style="font-size:0.65rem; color:var(--text-muted); margin-top:3px;">Repos digestif</div>
             </div>
         </div>
 
         <div class="water-tracker">
             <span style="font-size: 1.1rem;">💧</span>
-            <span id="water-count" style="font-weight: 800; color: var(--water);">0</span> <span style="font-size:0.8rem">verres</span>
+            <span id="water-count" style="font-weight: 800; color: var(--water);">0</span> <span style="font-size:0.8rem">verres d'eau</span>
             <button class="water-btn" onclick="addWater()">+</button>
         </div>
 
@@ -133,13 +150,13 @@
         </div>
 
         <select id="goal-select">
-            <option value="13">13 Heures</option>
-            <option value="16" selected>16 Heures</option>
-            <option value="18">18 Heures</option>
-            <option value="20">20 Heures</option>
+            <option value="13">13 Heures (Circadien)</option>
+            <option value="16" selected>16 Heures (16:8)</option>
+            <option value="18">18 Heures (18:6)</option>
+            <option value="20">20 Heures (Warrior)</option>
         </select>
 
-        <button id="main-btn" class="btn-start">Démarrer le jeûne</button>
+        <button id="main-btn" class="btn-start">Lancer le chrono</button>
     </div>
 
     <script>
@@ -169,18 +186,13 @@
 
             const progress = Math.min(elapsed / goalSeconds, 1);
             document.getElementById('progress-bar').style.strokeDashoffset = circ - (progress * circ);
-
-            const phase = document.getElementById('phase-text');
-            if (elapsed < 3600 * 4) phase.textContent = "Baisse du sucre";
-            else if (elapsed < 3600 * 12) phase.textContent = "Brûlage des graisses";
-            else if (elapsed < 3600 * 16) phase.textContent = "Autophagie en cours 🔥";
-            else phase.textContent = "Mode Survie Activé 🦾";
+            document.getElementById('progress-percent').textContent = Math.floor(progress * 100) + "%";
 
             if (elapsed >= goalSeconds) {
                 document.body.style.backgroundColor = "#064e3b";
-                document.getElementById('status-text').textContent = "OBJECTIF ATTEINT !";
+                document.getElementById('status-text').textContent = "ATTEINT !";
                 document.getElementById('progress-bar').style.stroke = "var(--success)";
-                cyclist.style.animationDuration = '4s';
+                cyclist.style.animationDuration = '3s';
             }
         }
 
@@ -207,8 +219,8 @@
         const saved = localStorage.getItem('fastStartTime');
         if (saved) {
             startTime = new Date(parseInt(saved));
-            cyclist.style.display = 'block';
-            btn.textContent = "Arrêter le jeûne";
+            cyclist.style.display = 'flex';
+            btn.textContent = "Arrêter la séance";
             btn.className = "btn-stop";
             document.getElementById('start-time').textContent = startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             const goalDate = new Date(startTime.getTime() + (parseInt(document.getElementById('goal-select').value) * 3600000));
