@@ -28,9 +28,10 @@
             margin: 0;
             min-height: 100vh;
             transition: background-color 1s ease;
+            overflow: hidden; /* Empêche le scroll pendant les confetti */
         }
 
-        .week-bar { display: flex; gap: 8px; margin-bottom: 20px; }
+        .week-bar { display: flex; gap: 8px; margin-bottom: 20px; z-index: 10; }
         .day-circle { display: flex; flex-direction: column; align-items: center; font-size: 0.6rem; color: var(--text-muted); }
         .dot { 
             width: 32px; height: 32px; border-radius: 50%; 
@@ -46,38 +47,44 @@
             padding: 25px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.4);
             text-align: center;
+            z-index: 10;
+            position: relative;
         }
 
-        /* Conteneur stabilisé à 320x320 */
-        .timer-box { 
-            position: relative; 
-            width: 320px; height: 320px; 
-            margin: 0 auto 10px;
-        }
+        .timer-box { position: relative; width: 320px; height: 320px; margin: 0 auto 10px; }
+        svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); overflow: visible; }
         
-        svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
         .progress-ring {
             stroke: var(--accent);
-            stroke-dasharray: 754; /* 2 * PI * 120 */
+            stroke-dasharray: 754;
             stroke-dashoffset: 754;
-            transition: stroke-dashoffset 0.5s ease;
+            transition: stroke-dashoffset 0.5s ease, stroke 1s ease;
+        }
+
+        /* VICTOIRE : Glow du cercle */
+        .victory-glow {
+            filter: drop-shadow(0 0 8px var(--success));
+            stroke: var(--success) !important;
         }
 
         /* LE CYCLISTE RECALIBRÉ */
         .cyclist {
-            position: absolute;
-            top: 0; left: 0;
-            width: 320px; height: 320px; /* Même taille que le box */
+            position: absolute; top: 0; left: 0;
+            width: 320px; height: 320px;
             display: none;
-            /* Orbite à r=95 pour être à l'intérieur du cercle de r=120 */
             offset-path: path('M 160,160 m 0,-95 a 95,95 0 1,1 0,190 a 95,95 0 1,1 0,-190');
-            offset-rotate: auto 180deg; /* Garde les roues vers le cercle */
+            offset-rotate: auto 180deg;
             animation: bike-ride 10s linear infinite;
             z-index: 20;
             font-size: 2.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
+            transition: filter 0.5s;
+        }
+
+        /* VICTOIRE : Traînée de feu */
+        .fire-trail {
+            filter: drop-shadow(0 0 15px #ff4500) drop-shadow(-10px 0 20px #ff8c00);
+            animation: bike-ride 0.8s linear infinite !important; /* Vitesse turbo */
         }
 
         @keyframes bike-ride {
@@ -85,38 +92,27 @@
             to { offset-distance: 100%; }
         }
 
-        .timer-content {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 180px; /* Plus étroit pour laisser passer le vélo */
-            pointer-events: none;
-        }
-
         #timer-display { font-size: 2.2rem; font-weight: 800; margin: 0; letter-spacing: -1px; }
         #progress-percent { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
-        .status-label { color: var(--accent); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; }
+        
+        /* Confetti */
+        .confetti {
+            position: absolute; width: 10px; height: 10px; background: #ffd700;
+            top: -10px; z-index: 5; animation: fall 3s linear forwards;
+        }
+        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
 
+        button#main-btn {
+            width: 100%; padding: 18px; border-radius: 20px; border: none;
+            font-size: 1.1rem; font-weight: 800; cursor: pointer; margin-top: 10px;
+        }
+        .btn-start { background: var(--accent); color: white; }
+        .btn-stop { background: #334155; color: #ef4444; }
+        
         .water-tracker {
             display: flex; justify-content: center; align-items: center;
             gap: 15px; margin: 15px 0; padding: 10px;
             background: rgba(56, 189, 248, 0.1); border-radius: 20px;
-        }
-        .water-btn { background: var(--water); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; font-weight: bold; cursor: pointer; }
-
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 0; }
-        .stat-card { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 15px; }
-        
-        button#main-btn {
-            width: 100%; padding: 18px; border-radius: 20px; border: none;
-            font-size: 1.1rem; font-weight: 800; cursor: pointer;
-        }
-        .btn-start { background: var(--accent); color: white; }
-        .btn-stop { background: #334155; color: #ef4444; }
-
-        select {
-            width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); 
-            padding: 12px; border-radius: 12px; margin-bottom: 15px; text-align: center; font-weight: 600;
         }
     </style>
 </head>
@@ -131,26 +127,31 @@
                 <circle id="progress-bar" class="progress-ring" stroke-width="12" stroke-linecap="round" fill="transparent" r="120" cx="160" cy="160"/>
             </svg>
             <div id="cyclist" class="cyclist" style="display:none;">🚴‍♂️</div>
-            <div class="timer-content">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none;">
                 <div id="progress-percent">0%</div>
                 <div id="timer-display">00:00:00</div>
-                <div id="status-text" class="status-label">PRÊT</div>
+                <div id="status-text" style="font-size: 0.7rem; font-weight: 700; color: var(--accent); text-transform: uppercase;">PRÊT</div>
             </div>
         </div>
 
         <div class="water-tracker">
             <span style="font-size: 1.1rem;">💧</span>
-            <span id="water-count" style="font-weight: 800; color: var(--water);">0</span> <span style="font-size:0.8rem">verres d'eau</span>
-            <button class="water-btn" onclick="addWater()">+</button>
+            <span id="water-count" style="font-weight: 800; color: var(--water);">0</span>
+            <button onclick="addWater()" style="background:var(--water); color:white; border:none; width:30px; height:30px; border-radius:50%; font-weight:bold;">+</button>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card"><div style="font-size:0.6rem; color:var(--text-muted);">DÉBUT</div><div id="start-time" style="font-weight:700">--:--</div></div>
-            <div class="stat-card"><div style="font-size:0.6rem; color:var(--text-muted);">OBJECTIF</div><div id="end-time" style="font-weight:700">--:--</div></div>
+        <div id="stats" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:15px;">
+                <div style="font-size:0.55rem; color:var(--text-muted);">DÉBUT</div>
+                <div id="start-time" style="font-weight:700; font-size:0.9rem;">--:--</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:15px;">
+                <div style="font-size:0.55rem; color:var(--text-muted);">OBJECTIF</div>
+                <div id="end-time" style="font-weight:700; font-size:0.9rem;">--:--</div>
+            </div>
         </div>
 
-        <select id="goal-select">
-            <option value="13">13 Heures (Circadien)</option>
+        <select id="goal-select" style="width:100%; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); padding:12px; border-radius:12px; margin-bottom:15px; text-align:center;">
             <option value="16" selected>16 Heures (16:8)</option>
             <option value="18">18 Heures (18:6)</option>
             <option value="20">20 Heures (Warrior)</option>
@@ -161,22 +162,32 @@
 
     <script>
         let startTime = null;
-        let timerInterval = null;
+        let victoryTriggered = false;
         const circ = 120 * 2 * Math.PI;
         const btn = document.getElementById('main-btn');
         const cyclist = document.getElementById('cyclist');
 
+        function createConfetti() {
+            for(let i=0; i<50; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.left = Math.random() * 100 + 'vw';
+                c.style.backgroundColor = ['#f97316','#22c55e','#38bdf8','#ffd700'][Math.floor(Math.random()*4)];
+                c.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(c);
+                setTimeout(() => c.remove(), 5000);
+            }
+        }
+
         function addWater() {
-            let count = parseInt(localStorage.getItem('waterCount') || '0');
-            count++;
+            let count = parseInt(localStorage.getItem('waterCount') || '0') + 1;
             localStorage.setItem('waterCount', count);
             document.getElementById('water-count').textContent = count;
         }
 
         function updateUI() {
             if (!startTime) return;
-            const now = new Date();
-            const elapsed = Math.floor((now - startTime) / 1000);
+            const elapsed = Math.floor((new Date() - startTime) / 1000);
             const goalSeconds = parseInt(document.getElementById('goal-select').value) * 3600;
 
             const h = Math.floor(elapsed / 3600).toString().padStart(2, '0');
@@ -188,49 +199,45 @@
             document.getElementById('progress-bar').style.strokeDashoffset = circ - (progress * circ);
             document.getElementById('progress-percent').textContent = Math.floor(progress * 100) + "%";
 
-            if (elapsed >= goalSeconds) {
+            if (progress >= 1 && !victoryTriggered) {
+                victoryTriggered = true;
                 document.body.style.backgroundColor = "#064e3b";
-                document.getElementById('status-text').textContent = "ATTEINT !";
-                document.getElementById('progress-bar').style.stroke = "var(--success)";
-                cyclist.style.animationDuration = '3s';
+                document.getElementById('status-text').textContent = "VICTOIRE !";
+                document.getElementById('progress-bar').classList.add('victory-glow');
+                cyclist.classList.add('fire-trail');
+                createConfetti();
             }
         }
 
         btn.addEventListener('click', () => {
             if (!startTime) {
-                startTime = new Date();
-                localStorage.setItem('fastStartTime', startTime.getTime());
+                localStorage.setItem('fastStartTime', new Date().getTime());
                 localStorage.setItem('waterCount', '0');
                 location.reload();
             } else {
-                saveToHistory();
+                const elapsed = Math.floor((new Date() - startTime) / 1000);
+                let history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
+                history.unshift({ date: new Date().toISOString(), duration: (elapsed / 3600).toFixed(1) });
+                localStorage.setItem('fastHistory', JSON.stringify(history.slice(0, 7)));
                 localStorage.removeItem('fastStartTime');
                 location.reload();
             }
         });
 
-        function saveToHistory() {
-            const elapsed = Math.floor((new Date() - startTime) / 1000);
-            let history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
-            history.unshift({ date: startTime.toISOString(), duration: (elapsed / 3600).toFixed(1) });
-            localStorage.setItem('fastHistory', JSON.stringify(history.slice(0, 7)));
-        }
-
         const saved = localStorage.getItem('fastStartTime');
         if (saved) {
             startTime = new Date(parseInt(saved));
             cyclist.style.display = 'flex';
-            btn.textContent = "Arrêter la séance";
+            btn.textContent = "Arrêter le jeûne";
             btn.className = "btn-stop";
-            document.getElementById('start-time').textContent = startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            document.getElementById('start-time').textContent = startTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
             const goalDate = new Date(startTime.getTime() + (parseInt(document.getElementById('goal-select').value) * 3600000));
-            document.getElementById('end-time').textContent = goalDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            timerInterval = setInterval(updateUI, 1000);
+            document.getElementById('end-time').textContent = goalDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            setInterval(updateUI, 1000);
             updateUI();
         }
 
         document.getElementById('water-count').textContent = localStorage.getItem('waterCount') || '0';
-
         const bar = document.getElementById('week-bar');
         ['D','L','M','M','J','V','S'].forEach((d, i) => {
             const done = JSON.parse(localStorage.getItem('fastHistory') || '[]').some(h => new Date(h.date).getDay() === i);
