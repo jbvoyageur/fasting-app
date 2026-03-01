@@ -3,248 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <title>Jaco Fast Pro</title>
     <style>
         :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --accent: #f97316;
-            --success: #22c55e;
-            --water: #38bdf8;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
+            --bg: #0f172a; --card: #1e293b; --accent: #f97316;
+            --success: #22c55e; --text: #f8fafc; --text-muted: #94a3b8;
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: -apple-system, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            margin: 0;
-            min-height: 100vh;
-            transition: background-color 1s ease;
-            overflow: hidden; /* Empêche le scroll pendant les confetti */
+            background-color: var(--bg); color: var(--text);
+            font-family: -apple-system, system-ui, sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px; margin: 0; min-height: 100vh; overflow-x: hidden;
         }
-
-        .week-bar { display: flex; gap: 8px; margin-bottom: 20px; z-index: 10; }
-        .day-circle { display: flex; flex-direction: column; align-items: center; font-size: 0.6rem; color: var(--text-muted); }
-        .dot { 
-            width: 32px; height: 32px; border-radius: 50%; 
-            background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); 
-            margin-bottom: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;
-        }
-        .dot.completed { border-color: var(--success); background: rgba(34, 197, 94, 0.2); }
 
         .container {
-            background: var(--card);
-            border-radius: 32px;
-            width: 100%; max-width: 380px;
-            padding: 25px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-            text-align: center;
+            background: var(--card); border-radius: 30px;
+            width: 100%; max-width: 360px; padding: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5); text-align: center;
             z-index: 10;
-            position: relative;
         }
 
-        .timer-box { position: relative; width: 320px; height: 320px; margin: 0 auto 10px; }
-        svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); overflow: visible; }
-        
-        .progress-ring {
-            stroke: var(--accent);
-            stroke-dasharray: 754;
-            stroke-dashoffset: 754;
-            transition: stroke-dashoffset 0.5s ease, stroke 1s ease;
-        }
+        .timer-box { position: relative; width: 260px; height: 260px; margin: 0 auto 15px; }
+        svg.main-svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+        .progress-ring { stroke: var(--accent); stroke-dasharray: 691; stroke-dashoffset: 691; transition: stroke-dashoffset 0.5s linear; }
 
-        /* VICTOIRE : Glow du cercle */
-        .victory-glow {
-            filter: drop-shadow(0 0 8px var(--success));
-            stroke: var(--success) !important;
-        }
-
-        /* LE CYCLISTE RECALIBRÉ */
         .cyclist {
-            position: absolute; top: 0; left: 0;
-            width: 320px; height: 320px;
-            display: none;
-            offset-path: path('M 160,160 m 0,-95 a 95,95 0 1,1 0,190 a 95,95 0 1,1 0,-190');
-            offset-rotate: auto 180deg;
-            animation: bike-ride 10s linear infinite;
-            z-index: 20;
-            font-size: 2.5rem;
-            display: flex; align-items: center; justify-content: center;
-            transition: filter 0.5s;
+            position: absolute; top: 0; left: 0; width: 260px; height: 260px;
+            offset-path: path('M 130,130 m 0,-110 a 110,110 0 1,1 0,220 a 110,110 0 1,1 0,-220');
+            offset-rotate: auto 180deg; display: none; align-items: center; justify-content: center;
+            font-size: 2rem; z-index: 20;
+            animation: cruise 10s linear infinite;
         }
+        .cyclist.turbo { animation: cruise 1s linear infinite !important; filter: drop-shadow(0 0 15px #ff4500); }
+        .cyclist.turbo::after { content: '🔥'; position: absolute; transform: translate(-25px, 10px) rotate(90deg); }
 
-        /* VICTOIRE : Traînée de feu */
-        .fire-trail {
-            filter: drop-shadow(0 0 15px #ff4500) drop-shadow(-10px 0 20px #ff8c00);
-            animation: bike-ride 0.8s linear infinite !important; /* Vitesse turbo */
-        }
+        @keyframes cruise { from { offset-distance: 0%; } to { offset-distance: 100%; } }
 
-        @keyframes bike-ride {
-            from { offset-distance: 0%; }
-            to { offset-distance: 100%; }
-        }
+        .time-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
+        .picker-box { background: rgba(0,0,0,0.4); padding: 10px; border-radius: 15px; flex: 1; }
+        .label { font-size: 0.65rem; color: var(--text-muted); margin-bottom: 5px; font-weight: bold; }
+        select { background: transparent; color: white; border: none; font-size: 1.2rem; font-weight: bold; outline: none; cursor: pointer; }
 
-        #timer-display { font-size: 2.2rem; font-weight: 800; margin: 0; letter-spacing: -1px; }
-        #progress-percent { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
-        
-        /* Confetti */
-        .confetti {
-            position: absolute; width: 10px; height: 10px; background: #ffd700;
-            top: -10px; z-index: 5; animation: fall 3s linear forwards;
-        }
-        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
-
-        button#main-btn {
-            width: 100%; padding: 18px; border-radius: 20px; border: none;
-            font-size: 1.1rem; font-weight: 800; cursor: pointer; margin-top: 10px;
-        }
+        #main-btn { width: 100%; padding: 18px; border-radius: 18px; border: none; font-size: 1.1rem; font-weight: 800; cursor: pointer; }
         .btn-start { background: var(--accent); color: white; }
-        .btn-stop { background: #334155; color: #ef4444; }
-        
-        .water-tracker {
-            display: flex; justify-content: center; align-items: center;
-            gap: 15px; margin: 15px 0; padding: 10px;
-            background: rgba(56, 189, 248, 0.1); border-radius: 20px;
-        }
+        .btn-stop { background: #ef4444; color: white; }
+
+        .cal-container { width: 100%; max-width: 360px; margin-top: 25px; background: var(--card); border-radius: 25px; padding: 15px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 10px; }
+        .cal-day { position: relative; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; margin: auto; }
+        .ring-cal { position: absolute; top: 0; left: 0; transform: rotate(-90deg); z-index: 1; }
+        .cal-day span { position: relative; z-index: 2; }
+
+        .confetti { position: fixed; width: 10px; height: 10px; z-index: 100; animation: fall linear forwards; }
+        @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div class="week-bar" id="week-bar"></div>
-
     <div class="container">
         <div class="timer-box">
-            <svg width="320" height="320">
-                <circle stroke="rgba(255,255,255,0.05)" stroke-width="16" fill="transparent" r="120" cx="160" cy="160"/>
-                <circle id="progress-bar" class="progress-ring" stroke-width="12" stroke-linecap="round" fill="transparent" r="120" cx="160" cy="160"/>
+            <svg class="main-svg" width="260" height="260">
+                <circle stroke="rgba(255,255,255,0.15)" stroke-width="10" fill="transparent" r="110" cx="130" cy="130"/>
+                <circle id="progress-bar" class="progress-ring" stroke-width="10" stroke-linecap="round" fill="transparent" r="110" cx="130" cy="130"/>
             </svg>
-            <div id="cyclist" class="cyclist" style="display:none;">🚴‍♂️</div>
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none;">
-                <div id="progress-percent">0%</div>
-                <div id="timer-display">00:00:00</div>
-                <div id="status-text" style="font-size: 0.7rem; font-weight: 700; color: var(--accent); text-transform: uppercase;">PRÊT</div>
+            <div id="cyclist" class="cyclist">🚴‍♂️</div>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
+                <div id="timer-display" style="font-size: 2.2rem; font-weight: 800;">00:00:00</div>
+                <div id="status-label" style="font-size: 0.8rem; font-weight: 700; color: var(--accent); margin-top: 5px;">PRÊT</div>
             </div>
         </div>
 
-        <div class="water-tracker">
-            <span style="font-size: 1.1rem;">💧</span>
-            <span id="water-count" style="font-weight: 800; color: var(--water);">0</span>
-            <button onclick="addWater()" style="background:var(--water); color:white; border:none; width:30px; height:30px; border-radius:50%; font-weight:bold;">+</button>
-        </div>
-
-        <div id="stats" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
-            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:15px;">
-                <div style="font-size:0.55rem; color:var(--text-muted);">DÉBUT</div>
-                <div id="start-time" style="font-weight:700; font-size:0.9rem;">--:--</div>
+        <div class="time-row">
+            <div class="picker-box">
+                <div class="label">DÉBUT</div>
+                <select id="h-start"></select> : <select id="m-start"></select>
             </div>
-            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:15px;">
-                <div style="font-size:0.55rem; color:var(--text-muted);">OBJECTIF</div>
-                <div id="end-time" style="font-weight:700; font-size:0.9rem;">--:--</div>
+            <div class="picker-box">
+                <div class="label">FIN ESTIMÉE</div>
+                <div id="end-display" style="font-weight: bold; font-size: 1.2rem; margin-top: 2px;">--:--</div>
             </div>
         </div>
 
-        <select id="goal-select" style="width:100%; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); padding:12px; border-radius:12px; margin-bottom:15px; text-align:center;">
-            <option value="16" selected>16 Heures (16:8)</option>
-            <option value="18">18 Heures (18:6)</option>
-            <option value="20">20 Heures (Warrior)</option>
-            <option value="24">24 Heures (Expert!)</option>
-        </select>
+        <div style="margin-bottom: 20px;">
+            <div class="label">OBJECTIF</div>
+            <select id="type-select" style="width: 100%; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px;">
+                <option value="16">16 Heures</option>
+                <option value="18">18 Heures</option>
+                <option value="20">20 Heures</option>
+                <option value="24">24 Heures</option>
+                <option value="0.00138">5 Secondes (TEST)</option>
+            </select>
+        </div>
 
-        <button id="main-btn" class="btn-start">Lancer le chrono</button>
+        <button id="main-btn" class="btn-start">LANCER LE JEÛNE</button>
+    </div>
+
+    <div class="cal-container">
+        <div id="month-name" style="font-weight: 800; text-align: center; text-transform: capitalize; color: var(--accent);"></div>
+        <div class="cal-grid" id="cal-grid"></div>
     </div>
 
     <script>
-        let startTime = null;
+        let interval, confettiInterval, clockUpdateInterval;
+        let startTimestamp = null;
         let victoryTriggered = false;
-        const circ = 120 * 2 * Math.PI;
-        const btn = document.getElementById('main-btn');
-        const cyclist = document.getElementById('cyclist');
+        let userModifiedStart = false;
+        const circ = 110 * 2 * Math.PI;
+
+        const hStart = document.getElementById('h-start');
+        const mStart = document.getElementById('m-start');
+        const typeSelect = document.getElementById('type-select');
+        const endDisplay = document.getElementById('end-display');
+        const bar = document.getElementById('progress-bar');
+        const bike = document.getElementById('cyclist');
+        const mainBtn = document.getElementById('main-btn');
+        const statusLabel = document.getElementById('status-label');
+
+        function getStatusMessage(elapsedHours) {
+            if (victoryTriggered) return "🚀 OBJECTIF ATTEINT !";
+            if (elapsedHours < 4) return "🍽️ Digestion en cours";
+            if (elapsedHours < 8) return "⚖️ Stabilisation du sucre";
+            if (elapsedHours < 12) return "🔥 Mode brûlage activé";
+            if (elapsedHours < 16) return "📉 Lipolyse intense";
+            if (elapsedHours < 18) return "✨ Réparation cellulaire";
+            return "🧠 Clarté mentale max";
+        }
+
+        function init() {
+            for(let i=0; i<24; i++) hStart.add(new Option(i.toString().padStart(2,'0'), i));
+            for(let i=0; i<60; i++) mStart.add(new Option(i.toString().padStart(2,'0'), i));
+
+            const saved = localStorage.getItem('fastStart');
+            if (saved) {
+                startTimestamp = parseInt(saved);
+                const d = new Date(startTimestamp);
+                hStart.value = d.getHours();
+                mStart.value = d.getMinutes();
+                const savedType = localStorage.getItem('fastType');
+                if (savedType) typeSelect.value = savedType;
+                hStart.disabled = mStart.disabled = typeSelect.disabled = true;
+                startLogic();
+            } else {
+                updateTimeToNow();
+                clockUpdateInterval = setInterval(() => {
+                    if (!userModifiedStart && !startTimestamp) updateTimeToNow();
+                }, 1000);
+            }
+
+            hStart.onchange = mStart.onchange = () => { userModifiedStart = true; updateEnd(); };
+            typeSelect.onchange = updateEnd;
+            renderCalendar();
+        }
+
+        function updateTimeToNow() {
+            const now = new Date();
+            hStart.value = now.getHours();
+            mStart.value = now.getMinutes();
+            updateEnd();
+        }
+
+        function updateEnd() {
+            const h = parseInt(hStart.value), m = parseInt(mStart.value);
+            const duration = parseFloat(typeSelect.value);
+            let d = new Date(); d.setHours(h, m, 0, 0);
+            if (!startTimestamp && d > new Date()) d.setDate(d.getDate() - 1);
+            const end = new Date(d.getTime() + duration * 3600000);
+            endDisplay.textContent = `${end.getHours().toString().padStart(2,'0')}:${end.getMinutes().toString().padStart(2,'0')}`;
+            return d;
+        }
+
+        function startLogic() {
+            clearInterval(clockUpdateInterval);
+            mainBtn.textContent = "TERMINER LE JEÛNE";
+            mainBtn.className = "btn-stop";
+            bike.style.display = 'flex';
+            interval = setInterval(tick, 1000);
+            tick();
+        }
+
+        function tick() {
+            if (!startTimestamp) return;
+            const now = Date.now();
+            const elapsedSec = Math.floor((now - startTimestamp) / 1000);
+            const goalSec = parseFloat(typeSelect.value) * 3600;
+            const elapsedHours = elapsedSec / 3600;
+            
+            // Mise à jour du Chrono
+            const hrs = Math.floor(elapsedSec / 3600).toString().padStart(2, '0');
+            const mins = Math.floor((elapsedSec % 3600) / 60).toString().padStart(2, '0');
+            const secs = (elapsedSec % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').textContent = `${hrs}:${mins}:${secs}`;
+            
+            // Message Dynamique
+            statusLabel.textContent = getStatusMessage(elapsedHours);
+
+            // Progrès du cercle
+            const pct = Math.min(elapsedSec / goalSec, 1);
+            bar.style.strokeDashoffset = circ - (pct * circ);
+
+            if (pct >= 1 && !victoryTriggered) {
+                victoryTriggered = true;
+                bike.classList.add('turbo');
+                bar.style.stroke = "var(--success)";
+                statusLabel.style.color = "var(--success)";
+                confettiInterval = setInterval(createConfetti, 150);
+            }
+        }
+
+        mainBtn.onclick = function() {
+            if (!startTimestamp) {
+                const d = updateEnd();
+                startTimestamp = d.getTime();
+                localStorage.setItem('fastStart', startTimestamp);
+                localStorage.setItem('fastType', typeSelect.value);
+                hStart.disabled = mStart.disabled = typeSelect.disabled = true;
+                startLogic();
+            } else {
+                if(confirm("Enregistrer et arrêter ?")) {
+                    const history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
+                    const realHours = ((Date.now() - startTimestamp) / 3600000).toFixed(1);
+                    history.push({ d: new Date().toISOString().split('T')[0], h: realHours, g: typeSelect.value });
+                    localStorage.setItem('fastHistory', JSON.stringify(history));
+                    localStorage.removeItem('fastStart');
+                    localStorage.removeItem('fastType');
+                    location.reload();
+                }
+            }
+        };
+
+        function renderCalendar() {
+            const grid = document.getElementById('cal-grid'), hist = JSON.parse(localStorage.getItem('fastHistory') || '[]');
+            const now = new Date();
+            document.getElementById('month-name').textContent = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(now);
+            grid.innerHTML = '';
+            const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            for (let i = 1; i <= days; i++) {
+                const dateKey = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${i.toString().padStart(2,'0')}`;
+                const entry = hist.find(x => x.d === dateKey);
+                const ratio = entry ? Math.min(entry.h / entry.g, 1) : 0;
+                grid.innerHTML += `
+                <div class="cal-day">
+                    <svg class="ring-cal" width="38" height="38">
+                        <circle stroke="rgba(255,255,255,0.15)" stroke-width="3" fill="transparent" r="16" cx="19" cy="19"/>
+                        <circle stroke="${ratio >= 1 ? 'var(--success)' : 'var(--accent)'}" stroke-width="3" 
+                            stroke-dasharray="100.5" stroke-dashoffset="${entry ? 100.5 - (ratio * 100.5) : 100.5}" 
+                            stroke-linecap="round" fill="transparent" r="16" cx="19" cy="19"/>
+                    </svg>
+                    <span>${i}</span>
+                </div>`;
+            }
+        }
 
         function createConfetti() {
-            for(let i=0; i<50; i++) {
-                const c = document.createElement('div');
-                c.className = 'confetti';
-                c.style.left = Math.random() * 100 + 'vw';
-                c.style.backgroundColor = ['#f97316','#22c55e','#38bdf8','#ffd700'][Math.floor(Math.random()*4)];
-                c.style.animationDelay = Math.random() * 2 + 's';
-                document.body.appendChild(c);
-                setTimeout(() => c.remove(), 5000);
-            }
+            const c = document.createElement('div');
+            c.className = 'confetti';
+            c.style.left = Math.random() * 100 + 'vw';
+            c.style.backgroundColor = ['#f97316', '#22c55e', '#38bdf8', '#ffd700'][Math.floor(Math.random() * 4)];
+            c.style.animationDuration = (Math.random() * 2 + 2) + 's';
+            document.body.appendChild(c);
+            setTimeout(() => c.remove(), 4000);
         }
 
-        function addWater() {
-            let count = parseInt(localStorage.getItem('waterCount') || '0') + 1;
-            localStorage.setItem('waterCount', count);
-            document.getElementById('water-count').textContent = count;
-        }
-
-        function updateUI() {
-            if (!startTime) return;
-            const elapsed = Math.floor((new Date() - startTime) / 1000);
-            const goalSeconds = parseInt(document.getElementById('goal-select').value) * 3600;
-
-            const h = Math.floor(elapsed / 3600).toString().padStart(2, '0');
-            const m = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
-            const s = (elapsed % 60).toString().padStart(2, '0');
-            document.getElementById('timer-display').textContent = `${h}:${m}:${s}`;
-
-            const progress = Math.min(elapsed / goalSeconds, 1);
-            document.getElementById('progress-bar').style.strokeDashoffset = circ - (progress * circ);
-            document.getElementById('progress-percent').textContent = Math.floor(progress * 100) + "%";
-
-            if (progress >= 1 && !victoryTriggered) {
-                victoryTriggered = true;
-                document.body.style.backgroundColor = "#064e3b";
-                document.getElementById('status-text').textContent = "VICTOIRE !";
-                document.getElementById('progress-bar').classList.add('victory-glow');
-                cyclist.classList.add('fire-trail');
-                createConfetti();
-            }
-        }
-
-        btn.addEventListener('click', () => {
-            if (!startTime) {
-                localStorage.setItem('fastStartTime', new Date().getTime());
-                localStorage.setItem('waterCount', '0');
-                location.reload();
-            } else {
-                const elapsed = Math.floor((new Date() - startTime) / 1000);
-                let history = JSON.parse(localStorage.getItem('fastHistory') || '[]');
-                history.unshift({ date: new Date().toISOString(), duration: (elapsed / 3600).toFixed(1) });
-                localStorage.setItem('fastHistory', JSON.stringify(history.slice(0, 7)));
-                localStorage.removeItem('fastStartTime');
-                location.reload();
-            }
-        });
-
-        const saved = localStorage.getItem('fastStartTime');
-        if (saved) {
-            startTime = new Date(parseInt(saved));
-            cyclist.style.display = 'flex';
-            btn.textContent = "Arrêter le jeûne";
-            btn.className = "btn-stop";
-            document.getElementById('start-time').textContent = startTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            const goalDate = new Date(startTime.getTime() + (parseInt(document.getElementById('goal-select').value) * 3600000));
-            document.getElementById('end-time').textContent = goalDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            setInterval(updateUI, 1000);
-            updateUI();
-        }
-
-        document.getElementById('water-count').textContent = localStorage.getItem('waterCount') || '0';
-        const bar = document.getElementById('week-bar');
-        ['D','L','M','M','J','V','S'].forEach((d, i) => {
-            const done = JSON.parse(localStorage.getItem('fastHistory') || '[]').some(h => new Date(h.date).getDay() === i);
-            bar.innerHTML += `<div class="day-circle"><div class="dot ${done ? 'completed' : ''}">${done ? '✔️' : ''}</div>${d}</div>`;
-        });
+        init();
     </script>
 </body>
 </html>
